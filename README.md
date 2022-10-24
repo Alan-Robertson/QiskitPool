@@ -5,10 +5,20 @@ The qiksit backend accepts five jobs at a time, before it throws 400's back at t
 This little thread pool will simply accrue jobs up to that limit (or up to a user specified threshold), 
 before queueing the rest. The jobs will be released as the older ones finish. 
 
+## Installation ##
+
+As usual for a Python module
+```bash
+pip install -r requirements.txt
+python setup.py install
+```
+
 ## Usage ## 
 There's a jupyter notebook with some example code, but for those that don't want to have to look through all that:
 
 ```python
+import qiskitpool
+
 # Give the pool your provider so it knows what backends it's expecting
 pool = qiskitpool.QPool(provider)
 
