@@ -61,6 +61,14 @@ class QPool():
         for backend in self.worker_pools:
             self.worker_pools[backend].free()
 
+    def flush(self):
+        '''
+            QPool.flush
+            Clears all workers of finished jobs
+        '''
+        for backend in self.worker_pools:
+            self.worker_pools[backend].flush()
+
     def __repr__(self):
         '''
             QPool.__repr__

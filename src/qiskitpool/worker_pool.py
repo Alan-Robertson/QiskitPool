@@ -32,6 +32,7 @@ class QWorkerPool(threading.Thread):
 
         self.sleep_time = sleep_time
         self.running = True
+        self.finished_jobs = []
 
         super().__init__()
 
@@ -79,6 +80,7 @@ class QWorkerPool(threading.Thread):
             for i, worker in enumerate(self.workers):
                 if worker is None or worker.poll():
                     new_worker = self.dequeue()
+                    self.finished_jobs.append(self.workers[i])
                     self.workers[i] = new_worker
                     if new_worker is not None:
                         self.workers[i].run()
@@ -87,6 +89,14 @@ class QWorkerPool(threading.Thread):
             time.sleep(self.sleep_time)
             self.run_lock.acquire()
 
+        self.run_lock.release()
+
+    def flush(self):
+        '''
+            Clear finished jobs
+        '''
+        self.run_lock.acquire()
+        self.finished_jobs = []
         self.run_lock.release()
 
     def free(self):
