@@ -85,3 +85,10 @@ class QPool():
             Wrapper for QPool.__repr__
         '''
         return self.__repr__()
+
+    def __getitem__(self, key):
+        '''
+            QPool.__getitem__
+            Wrapper for QPool.worker_pools.__getitem__
+        '''
+        return self.worker_pools.__getitem__(key)

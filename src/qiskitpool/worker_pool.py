@@ -78,11 +78,17 @@ class QWorkerPool(threading.Thread):
         while self.running:
 
             for i, worker in enumerate(self.workers):
-                if worker is None or worker.poll():
-                    new_worker = self.dequeue()
+                if (worker is not None) and worker.poll():
+                    # Worker has finished, add it to the finished jobs
+                    # Set this worker to None
                     self.finished_jobs.append(self.workers[i])
-                    self.workers[i] = new_worker
+                    self.workers[i] = None
+                    worker = None
+                if worker is None:
+                    # Current worker has no job, grab a new job from the queue
+                    new_worker = self.dequeue()
                     if new_worker is not None:
+                        self.workers[i] = new_worker
                         self.workers[i].run()
 
             self.run_lock.release()
@@ -109,7 +115,10 @@ class QWorkerPool(threading.Thread):
         workers = self.workers
         for i, worker in enumerate(self.workers):
             if worker is not None:
-                worker.cancel()
+                try: # May throw an error if the job finishes while trying to cancel
+                    worker.cancel()
+                except:
+                    pass
                 workers[i] = None
 
         self.running = False
@@ -118,8 +127,10 @@ class QWorkerPool(threading.Thread):
         self.join()
 
     def __repr__(self):
-        str_rep = "{workers} : {qsize}".format(
+        str_rep = "{workers} : Queue: {qsize} Finished: {fsize}".format(
             qsize=self.queue.qsize(),
-            workers=''.join(['[X]','[ ]'][i is None] for i in self.workers)
+            workers=''.join(['[X]','[ ]'][i is None] for i in self.workers
+            fsize=len(self.finished_jobs)
+            )
         )
         return str_rep
