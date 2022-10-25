@@ -56,6 +56,41 @@ class QJob():
             return None
         return self.job.cancel()
 
+    def position(self):
+        pos = self.job.queue_position()
+        if pos is None:
+            return 0
+        return pos
+
+    def status(self):
+        if self.job is None:
+            return 'LOCAL QUEUE'
+        else:
+            status = self.job.status().value
+            if 'running' in status:
+                return 'RUNNING'
+            if 'run' in status:
+                return 'COMPLETE'
+            if 'validated' in status:
+                return 'VALIDATING'
+            if 'queued' in status:
+                pos = self.position()
+                return f'QISKIT QUEUE: {self.position()}'
+
+    def status_short(self):
+        if self.job is None:
+            return ' '
+        else:
+            status = self.job.status().value
+            if 'running' in status:
+                return 'R'
+            if 'run' in status:
+                return 'C'
+            if 'validated' in status:
+                return 'V'
+            if 'queued' in status:
+                return str(self.position())
+
     def result(self):
         '''
             QJob.result

@@ -17,11 +17,12 @@ class QWorkerPool(threading.Thread):
             - Confirm current job status
             - Send new jobs to the ibmq backends as they complete
     '''
-    def __init__(self, n_workers=5, sleep_time=10):
+    def __init__(self, n_workers=5, sleep_time=10, async_sleep_time=2):
         '''
             QWorkerPool.__init__
             :: n_workers :: Number of workers that may concurrently send jobs to the ibmq backend
             :: sleep_time :: Time between queue updates
+            :: async_sleep_time :: Qiskit's async requires a bit of a delay
         '''
         self.workers = [None] * n_workers
         self.queue = Queue()
@@ -31,6 +32,7 @@ class QWorkerPool(threading.Thread):
         self.run_lock = threading.Lock()
 
         self.sleep_time = sleep_time
+        self.async_sleep_time = async_sleep_time
         self.running = True
         self.finished_jobs = {}
         self.qjob_id = 0
@@ -92,6 +94,7 @@ class QWorkerPool(threading.Thread):
                     if new_worker is not None:
                         self.workers[i] = new_worker
                         self.workers[i].run()
+                        time.sleep(self.async_sleep_time)
 
             self.run_lock.release()
             time.sleep(self.sleep_time)
@@ -133,9 +136,15 @@ class QWorkerPool(threading.Thread):
         QWorkerPool.free
             Deallocate all workers, cancel all active jobs, then join the thread
         '''
+        pos_vals = []
+        for worker in self.workers:
+            if worker is None:
+                pos_vals.append(' ')
+            else:
+                pos_vals.append(worker.status_short())
         str_rep = "{workers} : Queued: {qsize} Finished: {fsize}".format(
             qsize=self.queue.qsize(),
-            workers=''.join(['[X]','[ ]'][i is None] for i in self.workers),
+            workers=''.join('[{}]'.format(i) for i in pos_vals),
             fsize=len(self.finished_jobs)
             )
         return str_rep
