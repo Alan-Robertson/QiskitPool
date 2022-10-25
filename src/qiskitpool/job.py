@@ -10,7 +10,7 @@ class QJob():
         QJob
         Job manager for asynch qiskit backends
     '''
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, qjob_id=None, **kwargs):
         '''
             QJob.__init__
             Initialiser for a qiksit job
@@ -21,6 +21,7 @@ class QJob():
         self.job = None
         self.done = False
         self.test_count = 10
+        self.qjob_id = qjob_id
 
     def __call__(self):
         '''

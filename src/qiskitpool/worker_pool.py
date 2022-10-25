@@ -32,7 +32,8 @@ class QWorkerPool(threading.Thread):
 
         self.sleep_time = sleep_time
         self.running = True
-        self.finished_jobs = []
+        self.finished_jobs = {}
+        self.qjob_id = 0
 
         super().__init__()
 
@@ -50,7 +51,8 @@ class QWorkerPool(threading.Thread):
             Arguments should be whatever is passed to qiskit.execute
         '''
         self.queue_lock.acquire()
-        job = QJob(*args, **kwargs)
+        job = QJob(*args, qjob_id = self.qjob_id, **kwargs)
+        self.qjob_id += 1
         self.queue.put(job)
         self.queue_lock.release()
         return job
@@ -81,7 +83,7 @@ class QWorkerPool(threading.Thread):
                 if (worker is not None) and worker.poll():
                     # Worker has finished, add it to the finished jobs
                     # Set this worker to None
-                    self.finished_jobs.append(self.workers[i])
+                    self.finished_jobs[self.workers[i].qjob_id] = self.workers[i]
                     self.workers[i] = None
                     worker = None
                 if worker is None:
@@ -127,10 +129,27 @@ class QWorkerPool(threading.Thread):
         self.join()
 
     def __repr__(self):
-        str_rep = "{workers} : Queue: {qsize} Finished: {fsize}".format(
+        '''
+        QWorkerPool.free
+            Deallocate all workers, cancel all active jobs, then join the thread
+        '''
+        str_rep = "{workers} : Queued: {qsize} Finished: {fsize}".format(
             qsize=self.queue.qsize(),
-            workers=''.join(['[X]','[ ]'][i is None] for i in self.workers
+            workers=''.join(['[X]','[ ]'][i is None] for i in self.workers),
             fsize=len(self.finished_jobs)
             )
-        )
         return str_rep
+
+    def __str__(self):
+        '''
+            QWorkerPool.__str__
+            Wrapper for QWorkerPool.__repr__
+        '''
+        return self.__repr__()
+
+    def __getitem__(self, key):
+        '''
+            QWorkerPool.__getitem__
+            Wrapper for QWorkerPool.finished_jobs.__getitem__
+        '''
+        return self.finished_jobs.__getitem__(key)
